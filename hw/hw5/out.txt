@@ -1,0 +1,16 @@
+blubars@chrx ~/D/c/2/C/c/h/hw5> python3 hw5.py 
+Estimating P(U,M|S=120) with 100000 samples:
+[Metro,	Business]:	0.01425638653217691
+[Metro,	CompSci]:	0.007894625930902486
+[CU,	Business]:	0.22041996774960568
+[CU,	CompSci]:	0.7574290197873097
+Estimating P(U,M|S=60) with 100000 samples:
+[Metro,	Business]:	0.36777054771880624
+[Metro,	CompSci]:	0.04634013885440213
+[CU,	Business]:	0.3449835541515906
+[CU,	CompSci]:	0.24090575927520136
+Estimating P(U,M|S=20) with 100000 samples:
+[Metro,	Business]:	0.9826774342050979
+[Metro,	CompSci]:	0.008493855176017012
+[CU,	Business]:	0.008269867207200101
+[CU,	CompSci]:	0.0005588434116869884
