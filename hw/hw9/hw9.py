@@ -28,7 +28,7 @@ from scipy.stats import multivariate_normal
 from numpy.linalg import inv
 from bayes_opt import BayesianOptimization
 from bayes_opt.helpers import acq_max
-from sklearn.gaussian_process.kernels import ConstantKernel, RBF, WhiteKernel
+from sklearn.gaussian_process.kernels import ConstantKernel, RBF, WhiteKernel, PairwiseKernel
 
 import pdb
 
@@ -52,7 +52,7 @@ def p1_function(x1, x2):
     y = -((x1-4)**2 + (x2-6)**2) * .1 + 6
     rv1 = multivariate_normal([3, 3], [[2.0, 0.6], [0.6, 1.0]])
     rv2 = multivariate_normal([6, 7], [[1.0, -0.5], [-0.5, 1.0]])
-    y += rv1.pdf(X)*80
+    y += rv1.pdf(X)*60
     y += rv2.pdf(X)*80
     return y
 
@@ -179,8 +179,8 @@ class GaussProc:
         return a - b.dot(inv).dot(inv).dot(c)
 
 def f1(x1,x2):
-    return p1_function(x1,x2)
-    #return add_noise(p1_function(x1,x2))
+    #return p1_function(x1,x2)
+    return add_noise(p1_function(x1,x2))
 
 ####################################################################
 #  MAIN
@@ -192,24 +192,22 @@ def main():
         run = sys.argv[1]
 
     # acquistion functions to try
-    acq_f = ["ei", "ucb"]
+    #acq_f = ["ei", "ucb"]
+    acq_f = ["ucb"]
     # parameters for acq functions
     acq_p = [
     # expected improvement
-                [0.001, 0.01],
+                #[0.001, 0.01],
     # upper confidence bound: 0 = exploitation, inf = expl.
                 [5, 10]]
 
-    plot_contour(f1, "Function", "X1", "X2")
+    #plot_contour(f1, "Function", "X1", "X2")
 
     if run:
         try:
             os.mkdir(str(run))
         except FileExistsError:
             pass
-
-    #gp = GaussProc()
-    #gp.add_data(X, np.array(Y))
 
     for afi, af in enumerate(acq_f):
         for ap in acq_p[afi]:
@@ -220,14 +218,18 @@ def main():
 
             # KERNELS: convariance
             # constant: adjust mean; RBF; WhiteKernel: estimate noise
-            kernel = ConstantKernel(constant_value=1e-5, constant_value_bounds=(1e-05, 100.0)) + ConstantKernel(constant_value=1e-5, constant_value_bounds=(1e-05, 10.0)) * RBF(length_scale=1.0, length_scale_bounds=(1e-05,10)) + WhiteKernel(noise_level=1e-5, noise_level_bounds=(1e-05,1.0))
+            #kernel = ConstantKernel(constant_value=1e-5, constant_value_bounds=(1e-05, 100.0)) + ConstantKernel(constant_value=1e-5, constant_value_bounds=(1e-05, 10.0)) * RBF(length_scale=1.0, length_scale_bounds=(1e-05,10)) + WhiteKernel(noise_level=1e-5, noise_level_bounds=(1e-05,1.0))
+            #kernel = PairwiseKernel(gamma=1.0, gamma_bounds=(1e-5,10.0), metric="rbf")
             #kernel = ConstantKernel(constant_value=1.0, constant_value_bounds=(1e-05, 10.0)) * RBF(length_scale=1.0, length_scale_bounds=(1e-05,10)) + WhiteKernel(noise_level=1e-5, noise_level_bounds=(1e-05,1.0))
-            #kernel = ConstantKernel(constant_value=1.0, constant_value_bounds=(1e-05, 10.0)) * RBF() + WhiteKernel(noise_level_bounds=(1e-05,10.0))
+            kernel = ConstantKernel(constant_value=5.0, constant_value_bounds=(1e-05, 10.0)) * \
+                        RBF(length_scale=1.0, length_scale_bounds=(0.5,2)) + \
+                        WhiteKernel(noise_level=1e-05, noise_level_bounds=(1e-05,1.0))
             #kernel = ConstantKernel(constant_value_bounds=(1e-05, 10.0)) + RBF(length_scale=1.0, length_scale_bounds=(1e-05,10)) + WhiteKernel(noise_level=1e-05, noise_level_bounds=(1e-05,10.0))
 
             bo = BayesianOptimization(f1,
                    {'x1': (0, 10), 'x2': (0, 10)})
-            gp_params = {'kernel':None, 'alpha':0.1}
+            #gp_params = {'kernel':kernel, 'alpha':0.1}
+            gp_params = {'kernel':kernel}
             bo.maximize(init_points=4, n_iter=4, xi=ap, kappa=ap, acq=af, **gp_params)
             iters = 4
             for i in range(4, MAX_ITERATIONS, 1):
