@@ -1,0 +1,164 @@
+\documentclass[letterpaper, 10pt]{article}
+%\usepackage{pgf} % import pgf plots from matplotlib
+\usepackage{amsmath,amsthm, amssymb}
+\usepackage{bm}
+%\usepackage{mathmode}
+\usepackage{listings}
+\usepackage{graphicx}
+
+%opening
+\title{CSCI 5822: Assignment 0}
+\author{Brian Lubars}
+\date{1/22/2018}
+
+\addtolength{\oddsidemargin}{-.875in}
+\addtolength{\evensidemargin}{-.875in}
+\addtolength{\textwidth}{1.75in}
+%\addtolength{\topmargin}{-.875in}
+\addtolength{\topmargin}{-1in}
+\addtolength{\textheight}{2in}
+
+\begin{document}
+
+\maketitle
+
+Bayes rule, Naive Bayes classification, and the Titanic data set.
+
+\section{Task 0}
+Here we build a joint probability table, representing the joint distribution over all variables: Gender (male/female), Age(adult/child), Class (1st/2nd/3rd/crew), Outcome (death, survival). This gives a table with 32 entries (one per each combination of variable values), where each entry is the $Pr(Gender, Age, Class, Outcome)$.
+
+Done, using python, table not required to be displayed here.
+
+\section{Task 1}
+Here are the results from building a table of the probabilities of death conditioned on the remaining variables: each entry is the $Pr(Outcome=death | Gender, Age, Class)$. Note that several of these variable combinations did not occur in the training set. I have therefore set these probabilities to 0 in the table.
+\\\\
+\textbf{Empirical $Pr(death|Gender, Age, Class)$}\\
+\begin{tabular}{| c | c | c | c | c | }
+    \hline
+    & \multicolumn{2}{|c|}{Male} & \multicolumn{2}{|c|}{Female} \\ \hline
+            & Child     & Adult     & Child     & Adult     \\ \hline
+    First   & 0         & 0.6742    & 0         & 0.0277    \\ \hline
+    Second  & 0         & 0.9166    & 0         & 0.1398    \\ \hline
+    Third   & 0.7292    & 0.8377    & 0.5484    & 0.5394    \\ \hline
+    Crew    & 0         & 0.7773    & 0         & 0.1304    \\ 
+    \hline
+\end{tabular}
+\\\\
+A straightforward rule that would predict survival from these probabilities is the following (since there are only two possible outcomes): 
+$$Outcome = death \text{ if } Pr(death|Gender, Age, Class) > 0.5$$
+Similarly, 
+$$Outcome = survival \text{ if } Pr(survival|Gender, Age, Class) = 1 - Pr(death|Gender, Age, Class) >= 0.5$$
+If we have no data, we will say they will survive, because we're optimists. It may be more correct to say we pick the most probable prior outcome (death), but the assignment says I get to choose the rule. This way it's consistent with the above probability table.
+
+Applying this rule to the above probability table, we get the following prediction table:
+\\\\
+\textbf{Classification table for feature combinations} \\
+\begin{tabular}{| c | c | c | c | c | }
+    \hline
+    & \multicolumn{2}{|c|}{Male} & \multicolumn{2}{|c|}{Female} \\ \hline
+            & Child     & Adult     & Child     & Adult     \\ \hline
+    First   & survival  & death     & survival  & survival  \\ \hline
+    Second  & survival  & death     & survival  & survival  \\ \hline
+    Third   & death     & death     & death     & death     \\ \hline
+    Crew    & survival  & death     & survival  & survival  \\ 
+    \hline
+\end{tabular}
+\\
+
+\section{Task 2}
+Now we construct a Naive Bayes classifier from the Titanic data. To do this, we construct six tables, one for each variable conditioned on death. Then, following the I.I.D (independent, identically distributed) assumption, we can combine these individual probability distributions into a joint probability with the following rule:
+$$ Pr(death,G,A,C) = Pr(death) \cdot Pr(G|death) \cdot Pr(A|death) \cdot Pr(C|death) $$
+
+But we want the conditional probability $Pr(death|G,A,C)$. If we write the random variables $G, A, C$ as an input vector of dimensionality 3, we can then write this as $\vec{x}$. Then:
+$$ Pr(death|\vec{x}) = \frac{Pr(\vec{x}|death) \cdot Pr(death)}{Pr(\vec{x})} $$
+
+We can get $Pr(\vec{x})$ by marginalizing over the outcome:
+$$ Pr(death|\vec{x}) = \frac{Pr(\vec{x}|death) \cdot Pr(death)}{Pr(\vec{x}|death) \cdot Pr(death) + Pr(\vec{x}|surv) \cdot Pr(surv)} $$
+
+\subsection{NB Conditional Probabilities}
+
+$P(Class|death)$\\
+\begin{tabular}{| c | c | c | c |}
+    \hline
+    1st     & 2nd     & 3rd       & crew   \\ \hline
+    0.0818  & 0.1121  & 0.3543    & 0.4516 \\ 
+    \hline
+\end{tabular}
+\\
+$P(Gender|death)$\\
+\begin{tabular}{| c | c |}
+    \hline
+    Male     & Female \\ \hline
+    0.9154  & 0.0845  \\ 
+    \hline
+\end{tabular}
+\\
+$P(Age|death)$\\
+\begin{tabular}{| c | c |}
+    \hline
+    Adult     & Child \\ \hline
+    0.9651  & 0.0349  \\ 
+    \hline
+\end{tabular}
+\\
+$P(Class|survival)$\\
+\begin{tabular}{| c | c | c | c |}
+    \hline
+    1st     & 2nd     & 3rd       & crew   \\ \hline
+    0.2855  & 0.1659  & 0.2503    & 0.2981 \\ 
+    \hline
+\end{tabular}
+\\
+$P(Gender|survival)$\\
+\begin{tabular}{| c | c |}
+    \hline
+    Male     & Female \\ \hline
+    0.5161  & 0.4838  \\ 
+    \hline
+\end{tabular}
+\\
+$P(Age|survival)$\\
+\begin{tabular}{| c | c |}
+    \hline
+    Adult     & Child \\ \hline
+    0.9198  & 0.0801  \\ 
+    \hline
+\end{tabular}
+\\\\
+$$P(death) = \frac{count(no)}{count(total)} = 0.6770 $$
+$$P(survival) = 1 - P(death) = 0.3230 $$
+\\\\
+\textbf{Naive Bayes Conditional Probabilities of Death} \\
+\begin{tabular}{| c | c | c | c | c | }
+    \hline
+    & \multicolumn{2}{|c|}{Male} & \multicolumn{2}{|c|}{Female} \\ \hline
+            & Child     & Adult     & Child     & Adult     \\ \hline
+    First   & 0.3169  & 0.5279     & 0.0437  & 0.0993  \\ \hline
+    Second  & 0.5221  & 0.7247     & 0.0972  & 0.2060  \\ \hline
+    Third   & 0.6960     & 0.8466     & 0.1841     & 0.3523     \\ \hline
+    Crew    & 0.7102  & 0.8552     & 0.1945  & 0.3679  \\ 
+    \hline
+\end{tabular}
+\\\\
+
+Using the same rule as Task 1, we can construct the classification table from the probabilities.
+\\
+\textbf{Classification table for feature combinations} \\
+\begin{tabular}{| c | c | c | c | c | }
+    \hline
+    & \multicolumn{2}{|c|}{Male} & \multicolumn{2}{|c|}{Female} \\ \hline
+            & Child     & Adult     & Child     & Adult     \\ \hline
+    First   & survival  & death     & survival  & survival  \\ \hline
+    Second  & death     & death     & survival  & survival  \\ \hline
+    Third   & death     & death     & survival  & survival  \\ \hline
+    Crew    & death     & death     & survival  & survival  \\ 
+    \hline
+\end{tabular}
+\\
+
+\section{Task 3}
+The advantages of Task 1 (empirical joint probability model) is that it's an extremely powerful model. This model contains all the information necessary to find a probability distribution from any combination of random variables. Given enough data, we could predict any scenario (assuming noise is small). The problem with the joint model is that we don't have nearly enough data from the Titanic model to accurately do this. Some rows in the joint table only have a couple of data points, and some are completely empty. These are very noisy results. If we tried to make predictions from this, it would be overfitting and would not give good results. The number of parameters we have to estimate grows exponentially with the number of variables.
+
+Naive Bayes is expected to give better results if the dataset is relatively small -- such as in this case, where there are only a few hundred entries. It is much easier to estimate the probability distributions, since we assume independence and identical distributions between the random variables. This greatly constrains the possible space of predictions our model can make. The downside is that the I.I.D estimates are almost always too strong. In practice, there are typically complex interactions between the variables. In this case, the model will be too weak to model the true distribution. For example, in this dataset it's clear that the age and class are not independent, because there are no children on the crew. But Naive Bayes will still likely do better than anything else with small amounts of data, since is less susceptible to noise in the datasets than the joint empirical model. This is especially true if smoothing is used.
+
+\end{document}

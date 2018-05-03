@@ -49,11 +49,11 @@ def p1_function(x1, x2):
     X = np.array([x1, x2])
     #y = 0.5*x1 + 1*x2
     #y = -((x1-5)*(x2-5))*.2 + 5
-    y = -((x1-4)**2 + (x2-6)**2) * .1 + 6
+    y = -((x1-5)**2 + (x2-5)**2) * .1 + 7
     rv1 = multivariate_normal([3, 3], [[2.0, 0.6], [0.6, 1.0]])
-    rv2 = multivariate_normal([6, 7], [[1.0, -0.5], [-0.5, 1.0]])
-    y += rv1.pdf(X)*80
-    y += rv2.pdf(X)*80
+    rv2 = multivariate_normal([6, 7], [[1.0, 0.5], [0.5, 1.0]])
+    y += rv1.pdf(X)*100
+    y += rv2.pdf(X)*100
     return y
 
 def add_noise(y):
@@ -179,13 +179,12 @@ class GaussProc:
         return a - b.dot(inv).dot(inv).dot(c)
 
 def f1(x1,x2):
-    return p1_function(x1,x2)
-    #return add_noise(p1_function(x1,x2))
+    return add_noise(p1_function(x1,x2))
 
 ####################################################################
 #  MAIN
 ###################################################################
-def main():
+if __name__ == "__main__":
     run = None
     fname = None
     if len(sys.argv) > 1:
@@ -200,7 +199,7 @@ def main():
     # upper confidence bound: 0 = exploitation, inf = expl.
                 [5, 10]]
 
-    plot_contour(f1, "Function", "X1", "X2")
+    #plot_contour(f1, "Function", "X1", "X2")
 
     if run:
         try:
@@ -227,7 +226,7 @@ def main():
 
             bo = BayesianOptimization(f1,
                    {'x1': (0, 10), 'x2': (0, 10)})
-            gp_params = {'kernel':None, 'alpha':0.1}
+            gp_params = {'kernel':kernel, 'alpha':0.0}
             bo.maximize(init_points=4, n_iter=4, xi=ap, kappa=ap, acq=af, **gp_params)
             iters = 4
             for i in range(4, MAX_ITERATIONS, 1):
@@ -262,8 +261,4 @@ def main():
             print(bo.res['all'])
 
             plot_bayes_opt_contour(p1_function, bo, fname=fname, title=title)
-
-if __name__ == "__main__":
-    main()
-
 
