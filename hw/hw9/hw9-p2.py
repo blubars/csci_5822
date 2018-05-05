@@ -98,6 +98,16 @@ class LinDynSys:
         self.res['m'] = [0]
         self.set_mode(0)
 
+    def print_trans_matrix(self):
+        a = np.zeros((3,3))
+        prev_m = 0
+        #print(self.res['m'])
+        for m in self.res['m']:
+            a[prev_m, m] += 1
+            prev_m = m
+        print(a)
+
+
     def plot(self, title=None):
         if title:
             plt.title(title)
@@ -130,9 +140,11 @@ def main():
     #    ds.reset()
     #    ds.run(500, mode=mode)
     #    ds.plot()
-    #ds.run(500, mode=0)
-    #ds.plot("Mode 0 Dynamical System")
+    ds.run(500, mode=0)
+    ds.plot("Mode 0 Dynamical System")
+    ds.reset()
     ds.run(1500, mode_trans_p=0.02)
+    ds.print_trans_matrix()
     ds.plot()
 
 if __name__ == "__main__":
