@@ -30,50 +30,111 @@ import pdb
 ####################################################################
 random.seed(12)
 
-a1 = .2
-a2 = .2
+modes = [
+    [0.5,0.5],
+    [0.07,0.9],
+    [0.1,0.1] ]
+
+colors = ['b', 'r', 'g']
+
 sigma = 2
 
 ####################################################################
 #  FUNCTION DEFINITIONS
 ####################################################################
-res = {
-    'y1' : [0],
-    'y2' : [0],
-    'z' : [0]
-}
+class LinDynSys:
+    def __init__(self, init=0):
+        self.u1 = norm()
+        self.u2 = norm()
+        self.u3 = norm()
+        #u2 = norm(loc=0, scale=sigma^2)
+        #u3 = norm(loc=0, scale=sigma^2)
+        self.cur_mode = 0
+        self.res = {'y1': [init], 'y2': [init], 
+                    'z': [init], 'm': [self.cur_mode]}
+
+    def draw_uniform(self):
+        return random.choice([0,1,2])
+
+    def get_y1(self):
+        a = self.res['y1']
+        return a[len(a)-1]
+
+    def get_y2(self):
+        a = self.res['y2']
+        return a[len(a)-1]
+
+    def set_mode(self, mode):
+        self.cur_mode = mode
+
+    def get_mode(self, mode=None):
+        # if mode is None, return current mode.
+        if mode is None:
+            mode = self.cur_mode
+        m = modes[mode]
+        return m[0], m[1]
+
+    def run(self, num_steps, mode=None, mode_trans_p=0):
+        for i in range(num_steps):
+            # draw new mode?
+            if random.random() < mode_trans_p:
+                new_mode = self.draw_uniform()
+                self.set_mode(new_mode)
+            a1, a2 = self.get_mode(mode)
+            # run system time step
+            y2 = self.get_y1() + self.u1.rvs(size=1)[0]
+            y1 = a1*self.get_y1() + a2*self.get_y2() + self.u2.rvs(size=1)[0]
+            z = y1 + self.u3.rvs(size=1)[0]
+            # save results
+            self.res['y1'].append(y1)
+            self.res['y2'].append(y2)
+            self.res['z'].append(z)
+            self.res['m'].append(self.cur_mode)
+
+    def reset(self):
+        self.res['y1'] = [0]
+        self.res['y2'] = [0]
+        self.res['z'] = [0]
+        self.res['m'] = [0]
+        self.set_mode(0)
+
+    def plot(self, title=None):
+        if title:
+            plt.title(title)
+        prev_m = self.res['m'][0]
+        start = 0
+        for i,m in enumerate(self.res['m']):
+            if prev_m != m:
+                # transition
+                X = [x for x in range(start,i,1)]
+                Y = [self.res['z'][x] for x in X]
+                c = colors[prev_m]
+                plt.plot(X, Y, c=c)
+                start = max(i-1,0)
+                prev_m = m
+        # once more, at the end
+        X = [x for x in range(start,len(self.res['z']),1)]
+        Y = [self.res['z'][x] for x in X]
+        c = colors[prev_m]
+        plt.plot(X, Y, c=c)
+        #plt.plot(self.res['z'], c=c)
+
+        plt.show()
 
 ####################################################################
 #  MAIN
 ###################################################################
+def main():
+    ds = LinDynSys(init=0)
+    #for mode in [0,1,2]:
+    #    ds.reset()
+    #    ds.run(500, mode=mode)
+    #    ds.plot()
+    #ds.run(500, mode=0)
+    #ds.plot("Mode 0 Dynamical System")
+    ds.run(1500, mode_trans_p=0.02)
+    ds.plot()
 
-u1 = norm()
-u2 = norm()
-u3 = norm()
-#u2 = norm(loc=0, scale=sigma^2)
-#u3 = norm(loc=0, scale=sigma^2)
-
-def get_y1():
-    a = res['y1']
-    return a[len(a)-1]
-
-def get_y2():
-    a = res['y2']
-    return a[len(a)-1]
-
-for i in range(100):
-    y2 = get_y1() + u1.rvs(size=1)[0]
-    y1 = a1*get_y1() + a2*get_y2() + u2.rvs(size=1)[0]
-    z = y1 + u3.rvs(size=1)[0]
-
-    res['y1'].append(y1)
-    res['y2'].append(y2)
-    res['z'].append(z)
-
-    #print(y1)
-    #print(y2)
-    print(z)
-
-plt.plot(res['z'])
-plt.show()
+if __name__ == "__main__":
+    main()
 
