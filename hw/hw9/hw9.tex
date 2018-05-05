@@ -7,9 +7,9 @@
 \usepackage{graphicx}
 
 %opening
-\title{CSCI 5822: Homework 8}
+\title{CSCI 5822: Homework 9}
 \author{Brian Lubars}
-\date{4/16/18}
+\date{5/02/18}
 
 \addtolength{\oddsidemargin}{-.875in}
 \addtolength{\evensidemargin}{-.875in}
@@ -21,51 +21,69 @@
 \begin{document}
 
 \maketitle
-\section{Task 1}
+\section{Part 1}
+\subsection{Part 1a}
+Implement a function over which we will optimize. This function takes an input vector and outputs a function value. 
+The function is an inverted paraboloid with two multivariate Gaussians added to it:
 
-Figure 1 shows a graph showing the probability that a new customer will be assigned an empty table in the CRP (Chinese Restaurant Process) as function of the number of customers already in the restaurant. This was calculated analytically according to the following equation:
-
-$$ P(\text{customer n sits at new table}|n) = \frac{\alpha}{n - 1 + \alpha} $$
-
-Not shown, but the probability of a customer sitting at each existing table depends on the number of customers in the restaurant and the number of customers sitting at that table. If the table has lots of customers, a new customer is more likely to sit there too:
-
-$$P(\text{customer n sits at table k}| n_k, n) = \frac{n_k}{n-1+\alpha}$$
+\section{Part 2}
+\subsection{Part 2a}
 
 \begin{figure}[h!]
-    \includegraphics[width=12cm]{crp-new-table.png}
-    \label{1}
-    \caption{Probability of a new table in CRP, $alpha = 0.5$}
+  \centering
+  \includegraphics[width=15cm]{ds_mode_0.png}
+  \label{1}
+  \caption{Linear Dynamical System}
 \end{figure}
 
-A CRP induces a partitioning of points (customers), split between clusters (tables). It does this without explicitly specifying the mixing distribution, $G$. More tables are possible as more points are drawn, but at the same time, the probability of a new table gets increasingly less likely with the more customers that are in the restaurant, while the probability a customer sitting at an existing table increases (rich get richer phenomena). Effectively, the probability of a new table goes to zero exponentially as the number of customers goes to infinity, producing a discrete partitioning over an infinite number of points. This can be thought of as a "stick-breaking process", wherein a stick is partitioned by successively breaking off parts of the remaining stick. In mathematical form, $\sum_{k=1}^{\infty} \pi_k = 1$. The probability of a point landing in each of these partitions is defined recursively with a higher k, since less of the "stick" is left: $\pi_k = \beta_k \prod_{i=1}^{k-1}(1 - \beta_i)$, $\beta_k \sim Beta(1, \alpha)$. $alpha$ is the concentration parameter, determining how quickly the probability falls off. A smaller alpha means less of the "stick" is left for subsequent breaking rounds, increasing concentration (decreasing number of tables). 
+\subsection{Part 2b}
 
-This stick-breaking (partitioning) of points. Each partition $k$ has a $\theta_k$, and each point is then sampled from $\theta_k$. This partition defines a Dirichlet distribution, which is a random sampling from the Dirichlet process: $G(\theta) = \sum_{k=1}^{\infty} \pi_k \delta_{\theta_k}(\theta) \sim DP(\alpha, G_0)$
-
-
-\section{Task 2}
-Using the above equations, we can create an iterative model wherein each new customer sits at a table according to a probability defined by the equations defined in Part 1. At each step, the customer picks a table according to a categorical distribution defined by the Dirichlet Process prior. The new state then defines the Dirichet Process posterior, since a Dirichlet is the conjugate prior of a categorical or multinomial distribution. 
-
-Running this process with 500 customers and $\alpha = 0.5$, we see the effect of this "rich-get-richer" partitioning phenomena produced by the stick-breaking process described previously: Figures 2 through 5 show 4 generative runs.
-
-\begin{figure}[h]
-    \centering
-    %\begin{subfigure}
-    \includegraphics[width=6cm]{run1.png}
-    \label{2}
-    %\end{subfigure}%
-    %\begin{subfigure}
-    \includegraphics[width=6cm]{run4.png}
-    \label{3}
-    %{subfigure}
-    %\begin{subfigure}
-    \includegraphics[width=6cm]{run5.png}
-    \label{4}
-    %{subfigure}
-    %\begin{subfigure}
-    \includegraphics[width=6cm]{run3.png}
-    \label{4}
-    %{subfigure}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=15cm]{ds_mixed.png}
+  \label{2}
+  \caption{Switched Mode Linear Dynamical System}
 \end{figure}
+
+\begin{table}[]
+\centering
+\caption{Parameters for linear dynamical system}
+\label{my-label}
+\begin{tabular}{lll}
+\textbf{mode} & \textbf{alpha1} & \textbf{alpha2} \\
+1             & 0.5             & 0.5             \\
+2             & 0.07            & 0.9             \\
+3             & 0.1             & 0.1            
+\end{tabular}
+\end{table}
+
+\begin{table}[]
+\centering
+\caption{Counts and observed transition probabilities}
+\label{my-label}
+\begin{tabular}{llll}
+\textbf{count (P)} & \textbf{mode 1} & \textbf{mode 2} & \textbf{mode 3} \\
+\textbf{mode 1}    & 746 (0.497)     & 3 (.002)        & 4 (.003)        \\
+\textbf{mode 2}    & 3 (.002)        & 536 (.357)      & 3 (.002)        \\
+\textbf{mode 3}    & 4 (.003)        & 3 (.002)        & 199 (.133)     
+\end{tabular}
+\end{table}
+
+A state-space model assumes there is a hidden state defined by a continuous vector X, and an observation of the state defined by a vector Z. Some arbitrary observation function maps X to Z. A linear state model assumes that the mapping from $X_{t-1}$ to $X_t$ and $X_t$ to $Z_t$ is linear!
+
+A Kalman Filter is a linear state-space model with Gaussian noise on the state $X$ and the observation $Z$. The model works as follows.
+
+The linear dynamics of a new time step of the state space are modeled by thedifference equation (linear stochastic difference from the previous state): 
+$$ x_k = F_k x_{k-1} + B_k u_k+ w_k $$
+... where $x_k$ is the new state, $F_k$ is the state-transition matrix and $w_k \sim \mathcal{N}(0, Q_k)$ is the process noise drawn from a normal distribution, and $B_k u_k$ is the models the effects of the inputs on the system (if they are known). 
+
+The observation at each time step modeled by the equation: 
+$$ z_k = H_k x_k + v_k $$
+... where $H_k$ models the linear function mapping the state $x_k$ to the observation $z_k$ and $v_k \sim \mathcal{N}(0,R_k)$ is observation noise.
+
+The Kalman Filter, then, makes a posterior estimate of the new state based on the predictions of the previous position, dynamics, and noise.
+
+At each step, we calculate the residual based on the new observation, calculate the residual covariance, and calculate the optimal kalman gain based on the residual covariance! Finally, we update the predicted $x_k$.
 
 \end{document}
 
